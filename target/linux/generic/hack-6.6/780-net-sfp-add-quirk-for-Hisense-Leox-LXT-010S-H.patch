@@ -1,0 +1,32 @@
+From: John Pavlick <jspavlick@posteo.net>
+Date: Sun, 08 Feb 2026 00:00:00 +0000
+Subject: [PATCH] net: sfp: add quirk for Hisense-Leox LXT-010S-H GPON ONT
+
+The Hisense-Leox LXT-010S-H is a GPON ONT SFP stick that can operate at
+2500base-X, but incorrectly reports 1000BASE-LX at 1300MBd in its EEPROM.
+On hosts with serdes fixed at 2.5Gbase-X (e.g. Banana Pi R3 / MT7986),
+this causes "unsupported SFP module: no common interface modes".
+
+Add a quirk to:
+- Advertise 2500base-X mode (sfp_quirk_2500basex)
+- Ignore TX_FAULT during the module's ~40s Linux boot
+  (sfp_fixup_ignore_tx_fault)
+
+Signed-off-by: John Pavlick <jspavlick@posteo.net>
+---
+ drivers/net/phy/sfp.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -478,6 +478,11 @@ static const struct sfp_quirk sfp_quirks
+ 	SFP_QUIRK_F("HALNy", "HL-GSFP", sfp_fixup_halny_gsfp),
+ 
++	// Hisense-Leox LXT-010S-H is a GPON ONT SFP that can operate at
++	// 2500base-X, but reports 1000BASE-LX / 1300MBd in its EEPROM
++	SFP_QUIRK("Hisense-Leox", "LXT-010S-H", sfp_quirk_2500basex,
++		  sfp_fixup_ignore_tx_fault),
++
+ 	// HG MXPD-483II-F 2.5G supports 2500Base-X, but incorrectly reports
+ 	// 2600MBd in their EERPOM
+ 	SFP_QUIRK_M("HG GENUINE", "MXPD-483II", sfp_quirk_2500basex),
